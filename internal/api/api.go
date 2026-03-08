@@ -100,6 +100,9 @@ func (a *API) Router() http.Handler {
 		json.NewEncoder(w).Encode(map[string]string{"status": "healthy"})
 	})
 
+	r.Get("/ui", a.getWebUI)
+	r.Get("/", a.getWebUI)
+
 	return r
 }
 
