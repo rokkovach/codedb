@@ -107,7 +107,7 @@ func (a *API) listSubscriptions(w http.ResponseWriter, r *http.Request) {
 
 	subs, err := a.subscriptionSvc.ListSubscriptions(r.Context(), repoID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to list subscriptions", err.Error())
+		writeError(w, r, http.StatusInternalServerError, "failed to list subscriptions", err.Error())
 		return
 	}
 
@@ -126,23 +126,23 @@ func (a *API) createSubscription(w http.ResponseWriter, r *http.Request) {
 
 	var req createSubscriptionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body", err.Error())
+		writeError(w, r, http.StatusBadRequest, "invalid request body", err.Error())
 		return
 	}
 
 	if req.SubscriberID == "" {
-		writeError(w, http.StatusBadRequest, "subscriber_id is required", "")
+		writeError(w, r, http.StatusBadRequest, "subscriber_id is required", "")
 		return
 	}
 
 	if len(req.EventTypes) == 0 {
-		writeError(w, http.StatusBadRequest, "event_types is required", "")
+		writeError(w, r, http.StatusBadRequest, "event_types is required", "")
 		return
 	}
 
 	sub, err := a.subscriptionSvc.CreateSubscription(r.Context(), req.SubscriberID, &repoID, req.WorkspaceID, req.EventTypes, req.PathPatterns)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to create subscription", err.Error())
+		writeError(w, r, http.StatusInternalServerError, "failed to create subscription", err.Error())
 		return
 	}
 
@@ -153,7 +153,7 @@ func (a *API) deleteSubscription(w http.ResponseWriter, r *http.Request) {
 	subID := chi.URLParam(r, "subID")
 
 	if err := a.subscriptionSvc.DeleteSubscription(r.Context(), subID); err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to delete subscription", err.Error())
+		writeError(w, r, http.StatusInternalServerError, "failed to delete subscription", err.Error())
 		return
 	}
 
@@ -176,7 +176,7 @@ type wsMessage struct {
 func (a *API) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	subscriberID := r.URL.Query().Get("subscriber_id")
 	if subscriberID == "" {
-		writeError(w, http.StatusBadRequest, "subscriber_id is required", "")
+		writeError(w, r, http.StatusBadRequest, "subscriber_id is required", "")
 		return
 	}
 

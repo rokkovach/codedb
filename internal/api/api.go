@@ -35,12 +35,14 @@ func NewAPI(database *db.DB) *API {
 
 func (a *API) Router() http.Handler {
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
+	r.Use(RequestIDMiddleware)
 	r.Use(middleware.Recoverer)
-	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 
 	r.Route("/api/v1", func(r chi.Router) {
+		r.Get("/openapi.json", a.getOpenAPISpec)
+		r.Get("/docs", a.getDocs)
+
 		r.Route("/repos", func(r chi.Router) {
 			r.Get("/", a.listRepos)
 			r.Post("/", a.createRepo)
@@ -102,17 +104,21 @@ func (a *API) Router() http.Handler {
 }
 
 type errorResponse struct {
-	Error   string `json:"error"`
-	Code    int    `json:"code"`
-	Details string `json:"details,omitempty"`
+	Error     string `json:"error"`
+	Code      int    `json:"code"`
+	Details   string `json:"details,omitempty"`
+	RequestID string `json:"request_id,omitempty"`
 }
 
-func writeError(w http.ResponseWriter, code int, message string, details string) {
+func writeError(w http.ResponseWriter, r *http.Request, code int, message string, details string) {
+	requestID := GetRequestID(r.Context())
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	json.NewEncoder(w).Encode(errorResponse{
-		Error:   message,
-		Code:    code,
-		Details: details,
+		Error:     message,
+		Code:      code,
+		Details:   details,
+		RequestID: requestID,
 	})
 }
 

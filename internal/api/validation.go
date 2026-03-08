@@ -146,7 +146,7 @@ func (a *API) listValidators(w http.ResponseWriter, r *http.Request) {
 
 	validators, err := a.validationSvc.ListValidators(r.Context(), repoID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to list validators", err.Error())
+		writeError(w, r, http.StatusInternalServerError, "failed to list validators", err.Error())
 		return
 	}
 
@@ -168,12 +168,12 @@ func (a *API) createValidator(w http.ResponseWriter, r *http.Request) {
 
 	var req createValidatorRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body", err.Error())
+		writeError(w, r, http.StatusBadRequest, "invalid request body", err.Error())
 		return
 	}
 
 	if req.Name == "" || req.Command == "" {
-		writeError(w, http.StatusBadRequest, "name and command are required", "")
+		writeError(w, r, http.StatusBadRequest, "name and command are required", "")
 		return
 	}
 
@@ -183,7 +183,7 @@ func (a *API) createValidator(w http.ResponseWriter, r *http.Request) {
 
 	v, err := a.validationSvc.CreateValidator(r.Context(), &repoID, req.Name, req.Command, req.FilePatterns, req.TimeoutSecs, req.IsBlocking, req.IsEnabled, req.Priority)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to create validator", err.Error())
+		writeError(w, r, http.StatusInternalServerError, "failed to create validator", err.Error())
 		return
 	}
 
@@ -195,7 +195,7 @@ func (a *API) getValidator(w http.ResponseWriter, r *http.Request) {
 
 	v, err := a.validationSvc.GetValidator(r.Context(), validatorID)
 	if err != nil {
-		writeError(w, http.StatusNotFound, "validator not found", err.Error())
+		writeError(w, r, http.StatusNotFound, "validator not found", err.Error())
 		return
 	}
 
@@ -217,13 +217,13 @@ func (a *API) updateValidator(w http.ResponseWriter, r *http.Request) {
 
 	var req updateValidatorRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body", err.Error())
+		writeError(w, r, http.StatusBadRequest, "invalid request body", err.Error())
 		return
 	}
 
 	v, err := a.validationSvc.UpdateValidator(r.Context(), validatorID, req.Name, req.Command, req.FilePatterns, req.TimeoutSecs, req.IsBlocking, req.IsEnabled, req.Priority)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to update validator", err.Error())
+		writeError(w, r, http.StatusInternalServerError, "failed to update validator", err.Error())
 		return
 	}
 
@@ -234,7 +234,7 @@ func (a *API) deleteValidator(w http.ResponseWriter, r *http.Request) {
 	validatorID := chi.URLParam(r, "validatorID")
 
 	if err := a.validationSvc.DeleteValidator(r.Context(), validatorID); err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to delete validator", err.Error())
+		writeError(w, r, http.StatusInternalServerError, "failed to delete validator", err.Error())
 		return
 	}
 
@@ -251,7 +251,7 @@ func (a *API) getWorkspaceValidations(w http.ResponseWriter, r *http.Request) {
 
 	runs, err := a.validationSvc.ListRunsForWorkspace(r.Context(), workspaceID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to get validation runs", err.Error())
+		writeError(w, r, http.StatusInternalServerError, "failed to get validation runs", err.Error())
 		return
 	}
 

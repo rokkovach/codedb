@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -25,37 +24,47 @@ func main() {
 		port = "8080"
 	}
 
+	logLevel := os.Getenv("LOG_LEVEL")
+	if logLevel == "" {
+		logLevel = "info"
+	}
+
+	jsonLogging := os.Getenv("LOG_FORMAT") == "json"
+
+	logger := api.SetupLogger(jsonLogging, logLevel)
+	log := logger.With().Str("component", "main").Logger()
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	database, err := db.New(ctx, connString)
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		log.Fatal().Err(err).Msg("Failed to connect to database")
 	}
 	defer database.Close()
 
-	log.Println("Connected to database")
+	log.Info().Msg("Connected to database")
 
 	apiHandler := api.NewAPI(database)
 
 	go func() {
 		if err := apiHandler.SubscriptionSvc().StartListener(ctx); err != nil {
-			log.Printf("Failed to start subscription listener: %v", err)
+			log.Error().Err(err).Msg("Failed to start subscription listener")
 		}
 	}()
 
 	srv := &http.Server{
 		Addr:         ":" + port,
-		Handler:      apiHandler.Router(),
+		Handler:      api.LoggingMiddleware(logger)(apiHandler.Router()),
 		ReadTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
 
 	go func() {
-		log.Printf("Starting server on port %s", port)
+		log.Info().Str("port", port).Msg("Starting server")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Server failed: %v", err)
+			log.Fatal().Err(err).Msg("Server failed")
 		}
 	}()
 
@@ -63,16 +72,16 @@ func main() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	log.Println("Shutting down server...")
+	log.Info().Msg("Shutting down server...")
 
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer shutdownCancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		log.Fatalf("Server forced to shutdown: %v", err)
+		log.Error().Err(err).Msg("Server forced to shutdown")
 	}
 
-	log.Println("Server stopped")
+	log.Info().Msg("Server stopped")
 }
 
 func init() {

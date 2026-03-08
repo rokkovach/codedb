@@ -18,7 +18,7 @@ func (a *API) listWorkspaces(w http.ResponseWriter, r *http.Request) {
 
 	workspaces, err := a.workspaceSvc.ListWorkspaces(r.Context(), repoID, status)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to list workspaces", err.Error())
+		writeError(w, r, http.StatusInternalServerError, "failed to list workspaces", err.Error())
 		return
 	}
 
@@ -37,12 +37,12 @@ func (a *API) createWorkspace(w http.ResponseWriter, r *http.Request) {
 
 	var req createWorkspaceRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body", err.Error())
+		writeError(w, r, http.StatusBadRequest, "invalid request body", err.Error())
 		return
 	}
 
 	if req.Name == "" || req.OwnerID == "" {
-		writeError(w, http.StatusBadRequest, "name and owner_id are required", "")
+		writeError(w, r, http.StatusBadRequest, "name and owner_id are required", "")
 		return
 	}
 
@@ -52,7 +52,7 @@ func (a *API) createWorkspace(w http.ResponseWriter, r *http.Request) {
 
 	ws, err := a.workspaceSvc.CreateWorkspace(r.Context(), repoID, req.Name, req.OwnerID, req.OwnerType, req.BaseCommitID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to create workspace", err.Error())
+		writeError(w, r, http.StatusInternalServerError, "failed to create workspace", err.Error())
 		return
 	}
 
@@ -64,7 +64,7 @@ func (a *API) getWorkspace(w http.ResponseWriter, r *http.Request) {
 
 	ws, err := a.workspaceSvc.GetWorkspace(r.Context(), workspaceID)
 	if err != nil {
-		writeError(w, http.StatusNotFound, "workspace not found", err.Error())
+		writeError(w, r, http.StatusNotFound, "workspace not found", err.Error())
 		return
 	}
 
@@ -81,7 +81,7 @@ func (a *API) mergeWorkspace(w http.ResponseWriter, r *http.Request) {
 
 	var req mergeWorkspaceRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body", err.Error())
+		writeError(w, r, http.StatusBadRequest, "invalid request body", err.Error())
 		return
 	}
 
@@ -98,7 +98,7 @@ func (a *API) mergeWorkspace(w http.ResponseWriter, r *http.Request) {
 			})
 			return
 		}
-		writeError(w, http.StatusInternalServerError, "failed to merge workspace", err.Error())
+		writeError(w, r, http.StatusInternalServerError, "failed to merge workspace", err.Error())
 		return
 	}
 
@@ -113,7 +113,7 @@ func (a *API) abandonWorkspace(w http.ResponseWriter, r *http.Request) {
 
 	ws, err := a.workspaceSvc.AbandonWorkspace(r.Context(), workspaceID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to abandon workspace", err.Error())
+		writeError(w, r, http.StatusInternalServerError, "failed to abandon workspace", err.Error())
 		return
 	}
 
@@ -125,7 +125,7 @@ func (a *API) getWorkspaceFiles(w http.ResponseWriter, r *http.Request) {
 
 	files, err := a.workspaceSvc.ListFiles(r.Context(), workspaceID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to list workspace files", err.Error())
+		writeError(w, r, http.StatusInternalServerError, "failed to list workspace files", err.Error())
 		return
 	}
 
@@ -143,18 +143,18 @@ func (a *API) updateWorkspaceFile(w http.ResponseWriter, r *http.Request) {
 
 	var req updateWorkspaceFileRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body", err.Error())
+		writeError(w, r, http.StatusBadRequest, "invalid request body", err.Error())
 		return
 	}
 
 	if req.FileID == "" {
-		writeError(w, http.StatusBadRequest, "file_id is required", "")
+		writeError(w, r, http.StatusBadRequest, "file_id is required", "")
 		return
 	}
 
 	file, err := a.workspaceSvc.UpsertFile(r.Context(), workspaceID, req.FileID, req.Content, req.IsDeleted)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to update workspace file", err.Error())
+		writeError(w, r, http.StatusInternalServerError, "failed to update workspace file", err.Error())
 		return
 	}
 
@@ -166,7 +166,7 @@ func (a *API) deleteWorkspaceFile(w http.ResponseWriter, r *http.Request) {
 	fileID := chi.URLParam(r, "fileID")
 
 	if err := a.workspaceSvc.DeleteFile(r.Context(), workspaceID, fileID); err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to delete workspace file", err.Error())
+		writeError(w, r, http.StatusInternalServerError, "failed to delete workspace file", err.Error())
 		return
 	}
 
@@ -178,7 +178,7 @@ func (a *API) listLeases(w http.ResponseWriter, r *http.Request) {
 
 	leases, err := a.workspaceSvc.ListLeases(r.Context(), workspaceID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to list leases", err.Error())
+		writeError(w, r, http.StatusInternalServerError, "failed to list leases", err.Error())
 		return
 	}
 
@@ -198,12 +198,12 @@ func (a *API) acquireLease(w http.ResponseWriter, r *http.Request) {
 
 	var req acquireLeaseRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body", err.Error())
+		writeError(w, r, http.StatusBadRequest, "invalid request body", err.Error())
 		return
 	}
 
 	if req.OwnerID == "" {
-		writeError(w, http.StatusBadRequest, "owner_id is required", "")
+		writeError(w, r, http.StatusBadRequest, "owner_id is required", "")
 		return
 	}
 
@@ -213,7 +213,7 @@ func (a *API) acquireLease(w http.ResponseWriter, r *http.Request) {
 
 	lease, err := a.workspaceSvc.AcquireLease(r.Context(), workspaceID, req.FileID, req.PathPattern, req.OwnerID, req.Intent, req.TTL)
 	if err != nil {
-		writeError(w, http.StatusConflict, err.Error(), "")
+		writeError(w, r, http.StatusConflict, err.Error(), "")
 		return
 	}
 
@@ -229,7 +229,7 @@ func (a *API) renewLease(w http.ResponseWriter, r *http.Request) {
 
 	var req renewLeaseRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body", err.Error())
+		writeError(w, r, http.StatusBadRequest, "invalid request body", err.Error())
 		return
 	}
 
@@ -239,7 +239,7 @@ func (a *API) renewLease(w http.ResponseWriter, r *http.Request) {
 
 	lease, err := a.workspaceSvc.RenewLease(r.Context(), leaseID, req.TTL)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to renew lease", err.Error())
+		writeError(w, r, http.StatusInternalServerError, "failed to renew lease", err.Error())
 		return
 	}
 
@@ -250,7 +250,7 @@ func (a *API) releaseLease(w http.ResponseWriter, r *http.Request) {
 	leaseID := chi.URLParam(r, "leaseID")
 
 	if err := a.workspaceSvc.ReleaseLease(r.Context(), leaseID); err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to release lease", err.Error())
+		writeError(w, r, http.StatusInternalServerError, "failed to release lease", err.Error())
 		return
 	}
 
@@ -262,7 +262,7 @@ func (a *API) listLocks(w http.ResponseWriter, r *http.Request) {
 
 	locks, err := a.workspaceSvc.ListLocks(r.Context(), repoID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to list locks", err.Error())
+		writeError(w, r, http.StatusInternalServerError, "failed to list locks", err.Error())
 		return
 	}
 
@@ -284,12 +284,12 @@ func (a *API) acquireLock(w http.ResponseWriter, r *http.Request) {
 
 	var req acquireLockRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid request body", err.Error())
+		writeError(w, r, http.StatusBadRequest, "invalid request body", err.Error())
 		return
 	}
 
 	if req.OwnerID == "" {
-		writeError(w, http.StatusBadRequest, "owner_id is required", "")
+		writeError(w, r, http.StatusBadRequest, "owner_id is required", "")
 		return
 	}
 
@@ -303,7 +303,7 @@ func (a *API) acquireLock(w http.ResponseWriter, r *http.Request) {
 
 	lock, err := a.workspaceSvc.AcquireLock(r.Context(), repoID, req.FileID, req.PathPattern, req.OwnerID, req.OwnerType, req.LockType, req.Reason, req.ExpiresAt)
 	if err != nil {
-		writeError(w, http.StatusConflict, err.Error(), "")
+		writeError(w, r, http.StatusConflict, err.Error(), "")
 		return
 	}
 
@@ -314,7 +314,7 @@ func (a *API) releaseLock(w http.ResponseWriter, r *http.Request) {
 	lockID := chi.URLParam(r, "lockID")
 
 	if err := a.workspaceSvc.ReleaseLock(r.Context(), lockID); err != nil {
-		writeError(w, http.StatusInternalServerError, "failed to release lock", err.Error())
+		writeError(w, r, http.StatusInternalServerError, "failed to release lock", err.Error())
 		return
 	}
 
